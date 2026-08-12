@@ -3,27 +3,26 @@
 from __future__ import annotations
 
 
-NO_ANSWER = "Khong tim thay du thong tin trong context de tra loi cau hoi."
-
+NO_ANSWER = "Không tìm thấy đủ thông tin trong context để trả lời câu hỏi."
 
 def build_generation_prompt(question: str, context: str) -> str:
-    return f"""Ban la mot chuyen gia ho tro tra loi cau hoi ve phap luat Viet Nam.
+    return f"""Bạn là một chuyên gia hỗ trợ trả lời câu hỏi về pháp luật Việt Nam.
 
-NHIEM VU:
-Dua CHI tren phan "THONG TIN VAN BAN" duoc cung cap, hay tra loi cau hoi bang tieng Viet.
-Khong tu bo sung kien thuc phap luat ben ngoai context.
+NHIỆM VỤ:
+Dựa CHỈ trên phần "THÔNG TIN VĂN BẢN" được cung cấp, hãy trả lời câu hỏi bằng tiếng Việt.
+Không tự bổ sung kiến thức pháp luật bên ngoài context.
 
-QUY TAC:
-1. Chi su dung thong tin co trong context.
-2. Neu context khong du can cu, tra loi: "{NO_ANSWER}"
-3. Neu context co Dieu, Khoan, Diem hoac ten van ban lien quan, hay neu ro lam can cu.
-4. Tra loi truc tiep, ngan gon nhung du y.
+QUY TẮC:
+1. Chỉ sử dụng thông tin có trong context.
+2. Nếu context không đủ căn cứ, trả lời: "{NO_ANSWER}"
+3. Nếu context có Điều, Khoản, Điểm hoặc tên văn bản liên quan, hãy nêu rõ làm căn cứ.
+4. Trả lời trực tiếp, ngắn gọn nhưng đủ ý.
 
-THONG TIN VAN BAN:
+THÔNG TIN VĂN BẢN:
 {context}
 
-CAU HOI:
+CÂU HỎI:
 {question}
 
-CAU TRA LOI:
+CÂU TRẢ LỜI:
 """

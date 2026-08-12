@@ -9,7 +9,15 @@ from typing import Any
 
 DOC_NUMBER_PATTERN = re.compile(r"\b(?:So|S)\s*:\s*([\w\d/\-.]+)", flags=re.IGNORECASE)
 DOC_TITLE_PATTERN = re.compile(
-    r"(?im)^\s*(THONG TU|NGHI DINH|QUYET DINH|LUAT|NGHI QUYET|CHI THI|TCVN|QCVN)\b.*$"
+    r"(?im)^\s*("
+    r"THONG TU|THÔNG TƯ|"
+    r"NGHI DINH|NGHỊ ĐỊNH|"
+    r"QUYET DINH|QUYẾT ĐỊNH|"
+    r"LUAT|LUẬT|"
+    r"NGHI QUYET|NGHỊ QUYẾT|"
+    r"CHI THI|CHỈ THỊ|"
+    r"TCVN|QCVN"
+    r")\b.*$"
 )
 
 
