@@ -1,20 +1,46 @@
-# pip install bm25s --break-system-packages
-import bm25s
-from config import LegalQAConfig
+"""BM25 retrieval using bm25s."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
 
 class BM25sRetriever:
     def __init__(self) -> None:
-        self.top_k = LegalQAConfig.TOP_K
-        
-    
-    def build_bm25_fast(self, nodes):
-        corpus_texts = [n["text"] for n in nodes]
-        corpus_tokens = bm25s.tokenize(corpus_texts, stopwords=None)  # thay bằng tokenizer tiếng Việt nếu cần
-        retriever = bm25s.BM25()
+        try:
+            import bm25s
+        except ImportError as exc:
+            raise ImportError("Install bm25s to use BM25 retrieval.") from exc
+
+        self.bm25s = bm25s
+
+    def build(self, chunks: list[dict[str, Any]]):
+        corpus_texts = [chunk["text"] for chunk in chunks]
+        corpus_tokens = self.bm25s.tokenize(corpus_texts, stopwords=None)
+        retriever = self.bm25s.BM25()
         retriever.index(corpus_tokens)
         return retriever
 
-    def bm25_retrieve_fast(self, query, retriever, nodes, top_k=20):
-        query_tokens = bm25s.tokenize([query])
-        results, scores = retriever.retrieve(query_tokens, k=self.top_k)
-        return [{**nodes[idx], "bm25_score": float(score)} for idx, score in zip(results[0], scores[0])]
+    def retrieve(
+        self,
+        query: str,
+        retriever,
+        chunks: list[dict[str, Any]],
+        top_k: int = 20,
+    ) -> list[dict[str, Any]]:
+        query_tokens = self.bm25s.tokenize([query], stopwords=None)
+        results, scores = retriever.retrieve(query_tokens, k=top_k)
+        output: list[dict[str, Any]] = []
+        for idx, score in zip(results[0], scores[0]):
+            item = dict(chunks[int(idx)])
+            item["bm25_score"] = float(score)
+            output.append(item)
+        return output
+
+    @staticmethod
+    def save(retriever, path: Path) -> None:
+        retriever.save(str(path), corpus=None)
+
+    def load(self, path: Path):
+        return self.bm25s.BM25.load(str(path))
