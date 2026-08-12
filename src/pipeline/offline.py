@@ -43,10 +43,13 @@ def build_indexes_from_contexts(
 
     if build_dense:
         logger.info("Building dense index with %s...", config.biencoder_model)
-        dense = BiencoderRetriever(config.biencoder_model, batch_size=config.dense_batch_size)
+        dense = BiencoderRetriever(
+            config.biencoder_model,
+            batch_size=config.dense_batch_size,
+            device=config.embedding_device,
+        )
         embeddings = dense.encode_documents([chunk["text"] for chunk in chunks])
         artifacts["embeddings"] = embeddings
         artifacts["dense_index"] = dense.build_faiss_index(embeddings)
 
     return artifacts
-

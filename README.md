@@ -29,6 +29,15 @@ models/                      # file .gguf của LLM
 pip install -r requirements.txt
 ```
 
+Kaggle GPU note: `llama-cpp-python` installed from the default PyPI path can be CPU-only. If LLM generation is slow and GPU usage stays at 0%, reinstall llama.cpp with CUDA before running inference:
+
+```bash
+pip uninstall -y llama-cpp-python
+CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install --no-cache-dir llama-cpp-python
+```
+
+Then run with `--llm-n-gpu-layers -1 --llm-verbose`. In the logs, llama.cpp should print that layers are offloaded to GPU. If it does not, the GGUF backend is still running on CPU.
+
 Nếu chạy trên GPU CUDA với `llama-cpp-python`, hãy cài wheel/phiên bản phù hợp CUDA của môi trường đang dùng. Biencoder và reranker sẽ tự dùng CUDA nếu `torch` nhận GPU.
 
 ## Chuẩn bị corpus
@@ -101,6 +110,9 @@ python scripts/run_qa.py \
   --questions-file data/public-official.json \
   --artifacts-dir artifacts \
   --llm-model-path models/Qwen3.5-4B-UD-Q4_K_XL.gguf \
+  --device cuda \
+  --llm-n-gpu-layers -1 \
+  --llm-verbose \
   --output data/submission.json \
   --output-format submission
 ```

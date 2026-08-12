@@ -30,7 +30,11 @@ def retrieve_evidence(
     bm25_retriever = BM25sRetriever()
     dense_index = artifacts.get("dense_index")
     if dense_index is not None and dense_retriever is None:
-        dense_retriever = BiencoderRetriever(config.biencoder_model, batch_size=config.dense_batch_size)
+        dense_retriever = BiencoderRetriever(
+            config.biencoder_model,
+            batch_size=config.dense_batch_size,
+            device=config.embedding_device,
+        )
 
     candidate_chunks = get_candidate_chunks(
         question,
@@ -45,7 +49,11 @@ def retrieve_evidence(
 
     if use_reranker:
         if reranker is None:
-            reranker = CrossEncoderReranker(config.reranker_model, max_length=config.reranker_max_length)
+            reranker = CrossEncoderReranker(
+                config.reranker_model,
+                max_length=config.reranker_max_length,
+                device=config.reranker_device,
+            )
         ranked_chunks = reranker.rerank(
             question,
             candidate_chunks,

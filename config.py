@@ -28,10 +28,12 @@ class LegalQAConfig:
 
     # Dense encoder
     dense_batch_size: int = 32
+    embedding_device: str | None = None
 
     # Cross-encoder reranker
     reranker_batch_size: int = 16
     reranker_max_length: int = 256
+    reranker_device: str | None = None
 
     # LLM
     llm_n_ctx: int = 8192
@@ -41,3 +43,4 @@ class LegalQAConfig:
     llm_temperature: float = 0.1
     llm_top_p: float = 0.9
     llm_prompt_safety_tokens: int = 128
+    llm_verbose: bool = False

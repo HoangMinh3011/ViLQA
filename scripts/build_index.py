@@ -28,6 +28,7 @@ def main() -> None:
     parser.add_argument("--chunk-size", type=int, default=LegalQAConfig.chunk_size)
     parser.add_argument("--chunk-overlap", type=int, default=LegalQAConfig.chunk_overlap)
     parser.add_argument("--dense-batch-size", type=int, default=LegalQAConfig.dense_batch_size)
+    parser.add_argument("--device", default=LegalQAConfig.embedding_device)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -41,6 +42,7 @@ def main() -> None:
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         dense_batch_size=args.dense_batch_size,
+        embedding_device=args.device,
     )
     artifacts = build_indexes_from_contexts(
         args.contexts_dir,

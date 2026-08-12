@@ -52,8 +52,11 @@ def main() -> None:
     parser.add_argument("--max-context-tokens", type=int, default=LegalQAConfig.max_context_tokens)
     parser.add_argument("--expand-window", type=int, default=LegalQAConfig.expand_window)
     parser.add_argument("--dense-batch-size", type=int, default=LegalQAConfig.dense_batch_size)
+    parser.add_argument("--device", default=None)
+    parser.add_argument("--embedding-device", default=LegalQAConfig.embedding_device)
     parser.add_argument("--reranker-batch-size", type=int, default=LegalQAConfig.reranker_batch_size)
     parser.add_argument("--reranker-max-length", type=int, default=LegalQAConfig.reranker_max_length)
+    parser.add_argument("--reranker-device", default=LegalQAConfig.reranker_device)
 
     parser.add_argument("--llm-n-ctx", type=int, default=LegalQAConfig.llm_n_ctx)
     parser.add_argument("--llm-n-threads", type=int, default=LegalQAConfig.llm_n_threads)
@@ -62,6 +65,7 @@ def main() -> None:
     parser.add_argument("--llm-temperature", type=float, default=LegalQAConfig.llm_temperature)
     parser.add_argument("--llm-top-p", type=float, default=LegalQAConfig.llm_top_p)
     parser.add_argument("--llm-prompt-safety-tokens", type=int, default=LegalQAConfig.llm_prompt_safety_tokens)
+    parser.add_argument("--llm-verbose", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -84,8 +88,10 @@ def main() -> None:
         max_context_tokens=args.max_context_tokens,
         expand_window=args.expand_window,
         dense_batch_size=args.dense_batch_size,
+        embedding_device=args.embedding_device or args.device,
         reranker_batch_size=args.reranker_batch_size,
         reranker_max_length=args.reranker_max_length,
+        reranker_device=args.reranker_device or args.device,
         llm_n_ctx=args.llm_n_ctx,
         llm_n_threads=args.llm_n_threads,
         llm_n_gpu_layers=args.llm_n_gpu_layers,
@@ -93,15 +99,28 @@ def main() -> None:
         llm_temperature=args.llm_temperature,
         llm_top_p=args.llm_top_p,
         llm_prompt_safety_tokens=args.llm_prompt_safety_tokens,
+        llm_verbose=args.llm_verbose,
     )
 
     artifacts = load_artifacts(args.artifacts_dir)
     dense_retriever = (
-        BiencoderRetriever(config.biencoder_model, batch_size=config.dense_batch_size)
+        BiencoderRetriever(
+            config.biencoder_model,
+            batch_size=config.dense_batch_size,
+            device=config.embedding_device,
+        )
         if "dense_index" in artifacts
         else None
     )
-    reranker = None if args.skip_rerank else CrossEncoderReranker(config.reranker_model, config.reranker_max_length)
+    reranker = (
+        None
+        if args.skip_rerank
+        else CrossEncoderReranker(
+            config.reranker_model,
+            config.reranker_max_length,
+            device=config.reranker_device,
+        )
+    )
 
     questions: list[tuple[str, str]] = []
     if args.question:

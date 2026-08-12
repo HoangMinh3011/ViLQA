@@ -11,15 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 class CrossEncoderReranker:
-    def __init__(self, model_name: str, max_length: int = 256) -> None:
+    def __init__(self, model_name: str, max_length: int = 256, device: str | None = None) -> None:
         try:
             from sentence_transformers import CrossEncoder
         except ImportError as exc:
             raise ImportError("Install sentence-transformers to use cross-encoder reranking.") from exc
 
         self.model_name = model_name
-        self.model = CrossEncoder(model_name, max_length=max_length)
+        self.model = CrossEncoder(model_name, max_length=max_length, device=device)
         self._align_tokenizer_and_embeddings()
+        logger.info("Loaded reranker on device: %s", getattr(self.model.model, "device", "unknown"))
 
     def _align_tokenizer_and_embeddings(self) -> None:
         tokenizer = getattr(self.model, "tokenizer", None)

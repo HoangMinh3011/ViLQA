@@ -18,12 +18,18 @@ class QwenGGUFBackend:
             raise ImportError("Install llama-cpp-python to use GGUF generation.") from exc
 
         self.config = config
+        logger.info(
+            "Loading GGUF with n_gpu_layers=%s, n_ctx=%s, n_threads=%s",
+            config.llm_n_gpu_layers,
+            config.llm_n_ctx,
+            config.llm_n_threads,
+        )
         self.llm = Llama(
             model_path=model_path,
             n_ctx=config.llm_n_ctx,
             n_threads=config.llm_n_threads,
             n_gpu_layers=config.llm_n_gpu_layers,
-            verbose=False,
+            verbose=config.llm_verbose,
         )
 
     def _tokenize(self, text: str, add_bos: bool = False) -> list[int]:
