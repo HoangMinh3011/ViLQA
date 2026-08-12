@@ -31,7 +31,7 @@ class LegalQAConfig:
 
     # Cross-encoder reranker
     reranker_batch_size: int = 16
-    reranker_max_length: int = 512
+    reranker_max_length: int = 256
 
     # LLM
     llm_n_ctx: int = 8192
