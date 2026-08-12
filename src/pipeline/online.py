@@ -7,7 +7,7 @@ from typing import Any
 from config import LegalQAConfig
 from src.generation.context import reconstruct_context
 from src.model.qwen3_5_4b_gguf import QwenGGUFBackend
-from src.prepare_data.chunking import load_tokenizer
+from src.prepare_data.chunking import TokenizerLike, load_tokenizer
 from src.rerank.reranking import CrossEncoderReranker, select_top_k_evidence
 from src.retrieval.biencoder import BiencoderRetriever
 from src.retrieval.bm25s import BM25sRetriever
@@ -74,9 +74,11 @@ def answer_question(
     question: str,
     artifacts: dict[str, Any],
     config: LegalQAConfig,
+    llm: Any = None,
     llm_model_path: str | None = None,
     dense_retriever: BiencoderRetriever | None = None,
     reranker: CrossEncoderReranker | None = None,
+    tokenizer: TokenizerLike | None = None,
     tokenizer_model: str | None = None,
     use_reranker: bool = True,
 ) -> dict[str, Any]:
@@ -88,7 +90,8 @@ def answer_question(
         reranker=reranker,
         use_reranker=use_reranker,
     )
-    tokenizer = load_tokenizer(tokenizer_model or config.biencoder_model)
+    if tokenizer is None:
+        tokenizer = load_tokenizer(tokenizer_model or config.biencoder_model)
     context = reconstruct_context(
         stages["evidence"],
         artifacts["document_lookup"],
@@ -97,7 +100,8 @@ def answer_question(
         expand_window=config.expand_window,
     )
 
-    llm = QwenGGUFBackend(llm_model_path, config) if llm_model_path else MockLLMBackend()
+    if llm is None:
+        llm = QwenGGUFBackend(llm_model_path, config) if llm_model_path else MockLLMBackend()
     answer = llm.generate_answer(question, context)
     return {
         "question": question,

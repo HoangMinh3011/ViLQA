@@ -16,7 +16,8 @@ if str(ROOT) not in sys.path:
 
 from config import LegalQAConfig
 from src.io.artifacts import load_artifacts
-from src.pipeline.online import answer_question, retrieve_evidence
+from src.model.qwen3_5_4b_gguf import QwenGGUFBackend
+from src.pipeline.online import MockLLMBackend, answer_question, retrieve_evidence
 from src.prepare_data.chunking import load_tokenizer
 from src.rerank.reranking import CrossEncoderReranker
 from src.retrieval.biencoder import BiencoderRetriever
@@ -131,6 +132,14 @@ def main() -> None:
     results = []
     submission: dict[str, dict[str, str]] = {}
     tokenizer_model = args.tokenizer_model or config.biencoder_model
+    tokenizer = load_tokenizer(tokenizer_model)
+    llm_backend = None
+    if not args.inspect:
+        llm_backend = (
+            QwenGGUFBackend(args.llm_model_path, config)
+            if args.llm_model_path
+            else MockLLMBackend()
+        )
 
     for qid, question in questions:
         if args.inspect:
@@ -142,7 +151,6 @@ def main() -> None:
                 reranker=reranker,
                 use_reranker=not args.skip_rerank,
             )
-            tokenizer = load_tokenizer(tokenizer_model)
             result = {
                 "id": qid,
                 "question": question,
@@ -163,10 +171,10 @@ def main() -> None:
                 question,
                 artifacts,
                 config=config,
-                llm_model_path=args.llm_model_path,
+                llm=llm_backend,
                 dense_retriever=dense_retriever,
                 reranker=reranker,
-                tokenizer_model=tokenizer_model,
+                tokenizer=tokenizer,
                 use_reranker=not args.skip_rerank,
             )
             result = {"id": qid, **qa}
