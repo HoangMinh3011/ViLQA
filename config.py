@@ -39,7 +39,7 @@ class LegalQAConfig:
     llm_n_ctx: int = 8192
     llm_n_threads: int = 8
     llm_n_gpu_layers: int = -1
-    llm_max_tokens: int = 1024
+    llm_max_tokens: int = 512
     llm_temperature: float = 0.1
     llm_top_p: float = 0.9
     llm_prompt_safety_tokens: int = 128

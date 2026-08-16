@@ -21,6 +21,10 @@ class WhitespaceTokenizer:
         return " ".join(token_ids)
 
 
+def clean_decoded_chunk_text(text: str) -> str:
+    return text.replace("@@ ", "").replace("@@", "").strip()
+
+
 def load_tokenizer(model_name: str) -> TokenizerLike:
     try:
         from transformers import AutoTokenizer
@@ -48,7 +52,7 @@ def chunk_document(
     while start < len(tokens):
         end = min(start + chunk_size, len(tokens))
         chunk_tokens = tokens[start:end]
-        chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True)
+        chunk_text = clean_decoded_chunk_text(tokenizer.decode(chunk_tokens, skip_special_tokens=True))
         chunks.append(
             {
                 "chunk_id": f"{document['document_id']}_chunk_{chunk_index}",
@@ -57,7 +61,7 @@ def chunk_document(
                 "chunk_index": chunk_index,
                 "token_start": start,
                 "token_end": end,
-                "text": chunk_text.strip(),
+                "text": chunk_text,
                 "metadata": document.get("metadata", {}),
             }
         )
