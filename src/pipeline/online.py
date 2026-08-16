@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from typing import Any
 
 from config import LegalQAConfig
@@ -12,6 +14,8 @@ from src.rerank.reranking import CrossEncoderReranker, select_top_k_evidence
 from src.retrieval.biencoder import BiencoderRetriever
 from src.retrieval.bm25s import BM25sRetriever
 from src.retrieval.hybrid import get_candidate_chunks
+
+logger = logging.getLogger(__name__)
 
 
 class MockLLMBackend:
@@ -79,9 +83,12 @@ def answer_question(
     dense_retriever: BiencoderRetriever | None = None,
     reranker: CrossEncoderReranker | None = None,
     tokenizer: TokenizerLike | None = None,
+    document_token_cache: dict[str, list[Any]] | None = None,
     tokenizer_model: str | None = None,
     use_reranker: bool = True,
+    log_timing: bool = False,
 ) -> dict[str, Any]:
+    t0 = time.perf_counter()
     stages = retrieve_evidence(
         question,
         artifacts,
@@ -90,6 +97,7 @@ def answer_question(
         reranker=reranker,
         use_reranker=use_reranker,
     )
+    t1 = time.perf_counter()
     if tokenizer is None:
         tokenizer = load_tokenizer(tokenizer_model or config.biencoder_model)
     context = reconstruct_context(
@@ -98,11 +106,22 @@ def answer_question(
         tokenizer=tokenizer,
         max_context_tokens=config.max_context_tokens,
         expand_window=config.expand_window,
+        document_token_cache=document_token_cache,
     )
+    t2 = time.perf_counter()
 
     if llm is None:
         llm = QwenGGUFBackend(llm_model_path, config) if llm_model_path else MockLLMBackend()
     answer = llm.generate_answer(question, context)
+    t3 = time.perf_counter()
+    if log_timing:
+        logger.info(
+            "[TIMING] retrieve+rerank=%.2fs | context=%.2fs | generate=%.2fs | total=%.2fs",
+            t1 - t0,
+            t2 - t1,
+            t3 - t2,
+            t3 - t0,
+        )
     return {
         "question": question,
         "evidence": stages["evidence"],

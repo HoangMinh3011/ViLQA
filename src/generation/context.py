@@ -7,13 +7,20 @@ from typing import Any
 from src.prepare_data.chunking import TokenizerLike
 
 
+_DOC_TOKEN_CACHE: dict[str, list[Any]] = {}
+
+
 def reconstruct_context(
     evidence: list[dict[str, Any]],
     document_lookup: dict[str, dict[str, Any]],
     tokenizer: TokenizerLike,
     max_context_tokens: int = 5000,
     expand_window: int = 50,
+    document_token_cache: dict[str, list[Any]] | None = None,
 ) -> str:
+    if document_token_cache is None:
+        document_token_cache = _DOC_TOKEN_CACHE
+
     seen_chunks: set[str] = set()
     blocks: list[str] = []
     used_tokens = 0
@@ -27,7 +34,10 @@ def reconstruct_context(
         if document is None:
             continue
 
-        doc_tokens = tokenizer.encode(document["text"], add_special_tokens=False)
+        doc_id = str(item["document_id"])
+        if doc_id not in document_token_cache:
+            document_token_cache[doc_id] = tokenizer.encode(document["text"], add_special_tokens=False)
+        doc_tokens = document_token_cache[doc_id]
         start = max(0, int(item["token_start"]) - expand_window)
         end = min(len(doc_tokens), int(item["token_end"]) + expand_window)
         expanded_tokens = doc_tokens[start:end]
@@ -52,4 +62,3 @@ def reconstruct_context(
             break
 
     return "\n\n---\n\n".join(blocks)
-

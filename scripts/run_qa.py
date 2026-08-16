@@ -36,6 +36,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run LegalQA pipeline")
     parser.add_argument("--question", default=None)
     parser.add_argument("--questions-file", type=Path, default=None)
+    parser.add_argument("--offset", type=int, default=0)
+    parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--artifacts-dir", type=Path, default=Path("artifacts"))
     parser.add_argument("--llm-model-path", default=None)
     parser.add_argument("--output", type=Path, default=None)
@@ -67,6 +69,7 @@ def main() -> None:
     parser.add_argument("--llm-top-p", type=float, default=LegalQAConfig.llm_top_p)
     parser.add_argument("--llm-prompt-safety-tokens", type=int, default=LegalQAConfig.llm_prompt_safety_tokens)
     parser.add_argument("--llm-verbose", action="store_true")
+    parser.add_argument("--timing", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -128,11 +131,16 @@ def main() -> None:
         questions.append(("manual", args.question))
     if args.questions_file:
         questions.extend(load_questions(args.questions_file))
+    if args.offset or args.limit is not None:
+        start = max(0, args.offset)
+        end = None if args.limit is None else start + max(0, args.limit)
+        questions = questions[start:end]
 
     results = []
     submission: dict[str, dict[str, str]] = {}
     tokenizer_model = args.tokenizer_model or config.biencoder_model
     tokenizer = load_tokenizer(tokenizer_model)
+    document_token_cache = {}
     llm_backend = None
     if not args.inspect:
         llm_backend = (
@@ -165,6 +173,7 @@ def main() -> None:
                 tokenizer,
                 max_context_tokens=config.max_context_tokens,
                 expand_window=config.expand_window,
+                document_token_cache=document_token_cache,
             )
         else:
             qa = answer_question(
@@ -175,7 +184,9 @@ def main() -> None:
                 dense_retriever=dense_retriever,
                 reranker=reranker,
                 tokenizer=tokenizer,
+                document_token_cache=document_token_cache,
                 use_reranker=not args.skip_rerank,
+                log_timing=args.timing,
             )
             result = {"id": qid, **qa}
             submission[qid] = {"answer": str(qa["answer"])}
